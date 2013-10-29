@@ -33,15 +33,27 @@ module PageTitle
     end
 
     private
+    # Looks up translations for page title in this order:
+    #   titles.CONTROLLER.ACTION
+    #   titles.controllers.CONTROLLER
+    #   titles.actions.ACTION
     def title_translation
       I18n.t(
-        title_scope,
-        options.merge(scope: "titles")
+        normalized_action_name,
+        options.merge(scope: "titles.#{normalized_controller_name}",
+                      default: I18n.t(normalized_controller_name, 
+                                      scope: 'titles.controllers', 
+                                      default: I18n.t(normalized_action_name, 
+                                                      scope: 'titles.actions',
+                                                      default: '')))
       )
     end
 
+    # If we can get a title_translation based on controller name and/or action name, then
+    # we insert that into the base title translation. If not, we just use whatever's in titles.base_notitle.
     def base_translation
-      I18n.t("titles.base", title: title_translation)
+      title = title_translation
+      title.blank? ? I18n.t('titles.base_notitle') : I18n.t('titles.base', title: title_translation)
     end
 
     def normalized_action_name
